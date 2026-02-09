@@ -7,6 +7,11 @@ import pytesseract
 import io
 import os
 import sys
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
+from sklearn.calibration import CalibratedClassifierCV
 
 # --- AUTH LIBRARIES ---
 from flask_sqlalchemy import SQLAlchemy
@@ -20,6 +25,23 @@ if os.name == 'nt': # Windows
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 else: # Linux / Cloud
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
+def train_new_model():
+    print("⚠️ Version mismatch detected. Retraining model on server...")
+    # Create a tiny dummy dataset just to initialize the structure if file missing
+    # BUT ideally, you should upload 'spam.csv' if you want real retraining.
+    # Since you didn't upload CSVs (to save space), we will handle the error gracefully.
+    print("❌ Cannot retrain: Training data (spam.csv) is missing from server.")
+    print("👉 ACTION REQUIRED: Update requirements.txt to match your local scikit-learn version.")
+
+try:
+    with open('spam_model.pkl', 'rb') as f:
+        model = pickle.load(f)
+except Exception as e:
+    print(f"❌ Error loading model: {e}")
+    # If loading fails, we initialize a blank model so the app doesn't crash
+    # (The prediction will just fail gracefully)
+    model = None
 
 app = Flask(__name__)
 
