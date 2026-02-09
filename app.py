@@ -7,11 +7,7 @@ import pytesseract
 import io
 import os
 import sys
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.pipeline import Pipeline
-from sklearn.svm import LinearSVC
-from sklearn.calibration import CalibratedClassifierCV
+import gc  # <--- NEW: Garbage Collector for memory management
 
 # --- AUTH LIBRARIES ---
 from flask_sqlalchemy import SQLAlchemy
@@ -19,29 +15,11 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # --- 1. SMART TESSERACT CONFIGURATION ---
-# Detects if we are on Windows (Laptop) or Linux (Render Cloud)
 if os.name == 'nt': # Windows
-    # Update this path if you installed Tesseract somewhere else
+    # Update this path if needed
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 else: # Linux / Cloud
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
-
-def train_new_model():
-    print("⚠️ Version mismatch detected. Retraining model on server...")
-    # Create a tiny dummy dataset just to initialize the structure if file missing
-    # BUT ideally, you should upload 'spam.csv' if you want real retraining.
-    # Since you didn't upload CSVs (to save space), we will handle the error gracefully.
-    print("❌ Cannot retrain: Training data (spam.csv) is missing from server.")
-    print("👉 ACTION REQUIRED: Update requirements.txt to match your local scikit-learn version.")
-
-try:
-    with open('spam_model.pkl', 'rb') as f:
-        model = pickle.load(f)
-except Exception as e:
-    print(f"❌ Error loading model: {e}")
-    # If loading fails, we initialize a blank model so the app doesn't crash
-    # (The prediction will just fail gracefully)
-    model = None
 
 app = Flask(__name__)
 
@@ -60,7 +38,7 @@ login_manager.login_view = 'login'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(200)) # Increased length for secure hashes
+    password = db.Column(db.String(200)) 
     name = db.Column(db.String(100))
 
 # Create Tables
@@ -82,7 +60,6 @@ def signup():
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already exists.'}), 400
 
-    # Secure Password Hashing
     new_user = User(email=email, name=name, password=generate_password_hash(password, method='pbkdf2:sha256'))
     db.session.add(new_user)
     db.session.commit()
@@ -120,7 +97,7 @@ try:
     with open('spam_model.pkl', 'rb') as f:
         model = pickle.load(f)
 except:
-    print("❌ WARNING: 'spam_model.pkl' not found. Predictions will fail until trained.")
+    print("❌ WARNING: 'spam_model.pkl' not found.")
     model = None
 
 SPAM_TRIGGERS = ['free', 'winner', 'cash', 'prize', 'urgent', 'money', 'congrats', 'won', 'offer', 'call', 'text', 'click']
@@ -151,8 +128,7 @@ def home():
 @app.route('/process_file', methods=['POST'])
 def process_file():
     """
-    Handles Image & Text Uploads using In-Memory Processing.
-    This works perfectly on Render/Cloud without saving files to disk.
+    Optimized for Render Free Tier (Low RAM)
     """
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
@@ -167,10 +143,24 @@ def process_file():
     try:
         # Check if it is an image
         if filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
-            # Open directly from RAM (No disk save needed!)
+            
+            # 1. Open image directly from memory
             image = Image.open(file.stream)
+            
+            # 2. OPTIMIZATION: Convert to Grayscale (Reduces RAM by 66%)
+            image = image.convert('L') 
+            
+            # 3. OPTIMIZATION: Resize if too huge (Max 1000px width/height)
+            # This prevents 4K screenshots from crashing the server
+            image.thumbnail((1000, 1000)) 
+            
+            # 4. Extract Text
             content = pytesseract.image_to_string(image)
-        
+            
+            # 5. CLEANUP: Force delete image from memory immediately
+            del image
+            gc.collect()
+
         # Check if it is a text/email file
         else:
             content = file.read().decode('utf-8', errors='ignore')
@@ -182,17 +172,17 @@ def process_file():
 
     except Exception as e:
         print(f"Error processing file: {e}")
-        return jsonify({'error': "Failed to process file. Ensure it is a valid image or text file."}), 500
+        # Return a clean error message to the user
+        return jsonify({'error': "Memory Limit Exceeded. Try a smaller image."}), 500
 
 @app.route('/predict', methods=['POST'])
 def predict():
     if not model:
-        return jsonify({'error': 'Model is not loaded. Please contact admin.'}), 500
+        return jsonify({'error': 'Model is not loaded.'}), 500
         
     data = request.get_json()
     email_text = data.get('text', '')
     
-    # VIP Whitelist
     vip_words = ['unstop', 'internship', 'stipend', 'college', 'university']
     if any(word in email_text.lower() for word in vip_words):
         return jsonify({
@@ -204,7 +194,6 @@ def predict():
             'links': []
         })
 
-    # AI Prediction
     prediction = model.predict([email_text])[0]
     try: 
         confidence = round(max(model.predict_proba([email_text])[0]) * 100, 1)
@@ -215,7 +204,6 @@ def predict():
     tone_analysis = get_tone(email_text)
     link_analysis = analyze_links(email_text)
 
-    # Insight Logic
     if prediction == 'spam': 
         insight = f"⛔ SPAM: {tone_analysis} tone detected."
     elif prediction == 'promo': 

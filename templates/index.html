@@ -4,32 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NeuralShield AI - Enterprise Spam Detection</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- CORE THEME --- */
+        /* --- CORE THEME (PREMIUM DARK) --- */
         :root {
             --primary: #6366f1;       /* Indigo */
             --primary-dark: #4338ca;  /* Deep Indigo */
             --secondary: #0f172a;     /* Slate 900 */
             --accent: #818cf8;        /* Light Indigo */
-            --text-dark: #1e293b;
-            --text-gray: #64748b;
+            --text-light: #f8fafc;
+            --text-gray: #94a3b8;
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
             margin: 0; padding: 0; 
-            color: var(--text-dark);
-            background-color: #f8fafc;
+            color: var(--text-light);
+            background-color: #0f172a;
+            /* Static Premium Mesh Background (The one you liked) */
             background-image: 
-                radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%), 
-                radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, transparent 50%), 
-                radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, transparent 50%);
-            background-image: 
-                radial-gradient(at 40% 20%, hsla(260,100%,92%,1) 0px, transparent 50%),
-                radial-gradient(at 80% 0%, hsla(189,100%,94%,1) 0px, transparent 50%),
-                radial-gradient(at 0% 50%, hsla(341,100%,95%,1) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
             min-height: 100vh;
             overflow-x: hidden;
         }
@@ -52,15 +49,15 @@
             color: white; font-size: 20px;
             box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
         }
-        .logo-text { font-size: 22px; font-weight: 800; color: var(--secondary); letter-spacing: -0.5px; }
+        .logo-text { font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.5px; }
         .nav-right { display: flex; align-items: center; gap: 40px; }
-        .nav-links { display: flex; gap: 30px; font-size: 15px; color: var(--text-dark); font-weight: 600; }
+        .nav-links { display: flex; gap: 30px; font-size: 15px; color: var(--text-light); font-weight: 600; }
         .nav-links a:hover { color: var(--primary); }
         .auth-buttons { display: flex; gap: 15px; }
         .btn-nav { background: var(--primary); color: white; padding: 10px 24px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3); }
         .btn-nav:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 6px 12px -1px rgba(99, 102, 241, 0.4); }
-        .btn-outline { background: white; color: var(--text-dark); border: 1px solid #e2e8f0; margin-left: 0; box-shadow: none; }
-        .btn-outline:hover { border-color: var(--text-dark); background: #f8fafc; }
+        .btn-outline { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); margin-left: 0; box-shadow: none; }
+        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.05); }
 
         /* --- HERO --- */
         .hero { 
@@ -68,7 +65,7 @@
         }
         .hero h1 { 
             font-size: 64px; font-weight: 900; margin-bottom: 24px; line-height: 1.1; letter-spacing: -2px;
-            background: linear-gradient(to right, var(--secondary) 20%, var(--primary) 40%, var(--accent) 60%, var(--secondary) 80%);
+            background: linear-gradient(to right, #fff 20%, #a5b4fc 40%, #6366f1 60%, #fff 80%);
             background-size: 200% auto;
             color: #000; background-clip: text; text-fill-color: transparent; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             animation: shine 4s linear infinite alternate;
@@ -84,52 +81,84 @@
         }
         .showcase-img { 
             width: 380px; border-radius: 16px; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 4px solid rgba(255,255,255,0.7);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border: 4px solid rgba(255,255,255,0.1);
             transition: transform 0.3s ease; 
         }
         .showcase-img:hover { transform: translateY(-5px) scale(1.02); }
         .arrow-icon { font-size: 30px; color: var(--primary); opacity: 0.8; }
 
-        /* --- DEMO TOOL --- */
-        .demo-section-title { text-align: center; margin-bottom: 30px; font-size: 28px; font-weight: 700; color: var(--secondary); letter-spacing: -0.5px; }
+        /* --- DIAGNOSTIC TOOL (ANIMATED BOX) --- */
+        .demo-section-title { 
+            text-align: center; margin-bottom: 30px; 
+            font-size: 28px; font-weight: 700; color: white; letter-spacing: -0.5px; 
+        }
+        
         .demo-container { 
-            background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,249,255,0.9) 100%);
-            backdrop-filter: blur(20px);
-            max-width: 1000px; margin: 0 auto 100px; border-radius: 24px; 
-            box-shadow: 0 30px 60px -12px rgba(99, 102, 241, 0.15); border: 1px solid rgba(255, 255, 255, 0.8); 
+            /* THE ANIMATION MAGIC: Shimmering Gradient */
+            background: linear-gradient(120deg, #ffffff 0%, #f0f4ff 50%, #ffffff 100%);
+            background-size: 200% 200%;
+            animation: iceShimmer 6s ease-in-out infinite;
+            
+            max-width: 1000px; margin: 0 auto 100px; 
+            border-radius: 24px; 
+            box-shadow: 0 30px 60px -12px rgba(99, 102, 241, 0.15), 0 0 20px rgba(99,102,241, 0.2); 
+            border: 1px solid rgba(255, 255, 255, 0.8); 
             overflow: hidden; display: flex; position: relative; z-index: 5;
             transition: transform 0.3s, box-shadow 0.3s;
         }
-        .demo-container:hover { transform: translateY(-2px); box-shadow: 0 40px 70px -12px rgba(99, 102, 241, 0.2); }
+        
+        @keyframes iceShimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .demo-container:hover { transform: translateY(-2px); box-shadow: 0 40px 70px -12px rgba(99, 102, 241, 0.3); }
 
         .demo-input { flex: 1; padding: 50px; border-right: 1px solid rgba(0,0,0,0.05); }
+        
         .drop-zone { 
-            border: 2px dashed #cbd5e1; border-radius: 16px; padding: 40px; text-align: center; 
-            color: var(--text-gray); cursor: pointer; transition: 0.3s; background: white; position: relative;
+            border: 2px dashed #cbd5e1; border-radius: 16px; padding: 30px; 
+            text-align: center; color: var(--text-gray); cursor: pointer; transition: 0.3s; 
+            background: rgba(255,255,255,0.6); margin-bottom: 20px;
         }
         .drop-zone:hover { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
+        
         textarea { 
-            width: 100%; height: 120px; margin-top: 20px; padding: 16px; 
-            border: 1px solid #e2e8f0; border-radius: 12px; font-family: 'Inter', sans-serif; 
-            font-size: 14px; resize: none; outline: none; transition: 0.3s; background: white;
+            width: 100%; height: 120px; padding: 16px; margin-top: 10px;
+            border: 1px solid #e2e8f0; border-radius: 12px; 
+            font-family: 'Inter', sans-serif; font-size: 14px; color: #1e293b;
+            resize: none; outline: none; transition: 0.3s; background: rgba(255,255,255,0.8);
         }
-        textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); background: white; }
+        
+        .file-status { display: none; margin-top: 15px; padding: 10px 15px; background: #eef2ff; color: var(--primary-dark); border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid #c7d2fe; }
+
         .analyze-btn { 
             width: 100%; padding: 16px; background: var(--primary); color: white; border: none; 
             border-radius: 12px; font-size: 16px; font-weight: 700; margin-top: 24px; 
             cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.25);
         }
         .analyze-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
-        .file-status { display: none; margin-top: 15px; padding: 10px 15px; background: #eef2ff; color: var(--primary-dark); border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid #c7d2fe; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        .demo-result { flex: 1; padding: 50px; background: rgba(248, 250, 252, 0.6); display: flex; flex-direction: column; justify-content: center; }
+        /* RIGHT: The Result Area */
+        .demo-result { 
+            flex: 1; padding: 50px; 
+            background: rgba(248, 250, 252, 0.5); /* Semi-transparent to let animation show */
+            display: flex; flex-direction: column; justify-content: center; gap: 20px;
+            color: #1e293b;
+        }
+
         .result-card { 
-            background: white; padding: 24px; border-radius: 16px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; 
+            background: rgba(255,255,255,0.9); padding: 24px; border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
             border: 1px solid rgba(0,0,0,0.04); transition: 0.3s; opacity: 0.5;
         }
         .demo-result.active .result-card { opacity: 1; transform: translateX(0); }
+        
+        .result-title { font-size: 11px; font-weight: 700; color: var(--text-gray); letter-spacing: 0.5px; margin-bottom: 5px; }
+
+        /* Badges */
         .badge { display: inline-block; padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 800; margin-top: 5px; letter-spacing: 0.5px; }
         .badge.safe { background: #dcfce7; color: #166534; } 
         .badge.spam { background: #fee2e2; color: #991b1b; } 
@@ -137,54 +166,29 @@
         .badge.waiting { background: #f1f5f9; color: #64748b; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
-        /* --- NEW: GLOSSY & BOLD FEATURES SECTION --- */
+        /* --- FEATURES SECTION (CYBER-CHROME) --- */
         .features-section { 
             background: #0b0f19;
             position: relative;
             padding: 120px 20px 180px; 
             overflow: hidden;
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
 
-        .features-bg-glow {
-            position: absolute; width: 800px; height: 800px;
-            background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, rgba(0,0,0,0) 60%);
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 0; animation: pulseGlow 10s infinite alternate;
-        }
-        @keyframes pulseGlow { 0% { opacity: 0.4; scale: 0.8; } 100% { opacity: 0.8; scale: 1.1; } }
-
-        /* THE GLOSSY TEXT EFFECT */
+        /* GLOSSY TEXT */
         .section-title { 
             position: relative; z-index: 2;
-            text-align: center; 
-            margin-bottom: 90px;
-            font-size: 52px; /* Bigger */
-            font-weight: 900; /* Bolder */
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            line-height: 1.1;
-            
-            /* Chrome Gradient */
-            background: linear-gradient(
-                to bottom, 
-                #ffffff 0%, 
-                #eef2ff 45%, 
-                #6366f1 50%, 
-                #4338ca 50%, 
-                #818cf8 100%
-            );
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            
-            /* The 3D Shadow Pop */
-            filter: drop-shadow(0 2px 0px rgba(255,255,255,0.2)) 
-                    drop-shadow(0 10px 20px rgba(99, 102, 241, 0.5));
+            text-align: center; margin-bottom: 90px;
+            font-size: 52px; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 1px; line-height: 1.1;
+            background: linear-gradient(to bottom, #ffffff 0%, #eef2ff 45%, #6366f1 50%, #4338ca 50%, #818cf8 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 0px rgba(255,255,255,0.2)) drop-shadow(0 10px 20px rgba(99, 102, 241, 0.5));
         }
         
         .image-grid { 
             position: relative; z-index: 2;
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
+            display: grid; grid-template-columns: repeat(3, 1fr); 
             gap: 40px; max-width: 1200px; margin: 0 auto; 
             align-items: start;
         }
@@ -203,11 +207,7 @@
             .feature-card:nth-child(3n+2) { margin-top: 80px; }
             .feature-card:nth-child(3n+3) { margin-top: 40px; }
         }
-        @media (max-width: 900px) {
-            .image-grid { grid-template-columns: 1fr; gap: 30px; }
-            .feature-card { margin-top: 0 !important; }
-        }
-
+        
         .feature-card:hover { 
             transform: translateY(-15px) scale(1.02); 
             box-shadow: 0 30px 60px -10px rgba(99, 102, 241, 0.5); 
@@ -223,27 +223,21 @@
         .feature-label-glass {
             position: absolute; top: 20px; left: 20px; 
             background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff; font-size: 11px; font-weight: 900; 
             padding: 8px 16px; border-radius: 8px; 
             text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 2;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        .feature-content {
-            padding: 24px; flex: 1; display: flex; flex-direction: column; justify-content: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.3s;
-        }
-        .feature-card:hover .feature-content { background: linear-gradient(to bottom, rgba(99, 102, 241, 0.1), transparent); }
-        .feature-desc { color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0; font-weight: 500; }
+        .feature-content { padding: 24px; flex: 1; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .feature-desc { color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0; }
 
         /* --- AUTH MODAL --- */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
-        .modal-content { background-color: white; margin: 10% auto; padding: 40px; border-radius: 24px; width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: center; position: relative; }
-        .modal input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 12px; outline: none; }
+        .modal-content { background-color: white; margin: 10% auto; padding: 40px; border-radius: 24px; width: 400px; max-width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: center; position: relative; }
+        .modal input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 15px; color: #1f1f1f; }
         .close-btn { position: absolute; right: 24px; top: 24px; cursor: pointer; font-size: 24px; color: #94a3b8; }
         
         /* --- API SECTION --- */
@@ -252,16 +246,26 @@
         .token { color: #38bdf8; } .string { color: #a5b4fc; }
 
         /* Mobile Adjustments */
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             nav { flex-direction: column; gap: 20px; padding: 20px; }
             .nav-right { flex-direction: column; gap: 20px; width: 100%; }
             .nav-links { display: none; }
             .showcase-container { flex-direction: column; }
             .arrow-icon { transform: rotate(90deg); margin: 10px 0; }
-            .demo-container { flex-direction: column; }
+            
+            /* Stack the Diagnostic Tool */
+            .demo-container { flex-direction: column; width: 95%; }
+            .demo-input { border-right: none; border-bottom: 1px solid #f2f2f2; padding: 30px; }
+            .analyze-btn { width: 100%; border-radius: 8px; }
+            .demo-result { padding: 30px; }
+
             .api-section { flex-direction: column; text-align: center; }
             .hero h1 { font-size: 36px; }
             .section-title { font-size: 32px; margin-bottom: 50px; }
+            
+            /* Reset Grid Scatter for Mobile */
+            .image-grid { grid-template-columns: 1fr; gap: 30px; }
+            .feature-card { margin-top: 0 !important; }
         }
     </style>
 </head>
@@ -292,11 +296,11 @@
     <div id="authModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="document.getElementById('authModal').style.display='none'">&times;</span>
-            <h2 id="modalTitle" style="margin-top:0;">Login</h2>
+            <h2 id="modalTitle" style="margin-top:0; color:#1f1f1f;">Login</h2>
             <input type="text" id="nameInput" placeholder="Full Name" style="display:none;">
             <input type="email" id="emailInput" placeholder="work@email.com">
             <input type="password" id="passwordInput" placeholder="Password">
-            <button class="analyze-btn" onclick="submitAuth()" id="authSubmitBtn">Log In</button>
+            <button class="analyze-btn" style="width:100%; border-radius:8px;" onclick="submitAuth()" id="authSubmitBtn">Log In</button>
             <span style="color:var(--primary); cursor:pointer; font-size:14px; display:block; margin-top:24px; font-weight:600;" onclick="toggleAuthMode()" id="toggleText">Don't have an account? Sign Up</span>
         </div>
     </div>
@@ -329,22 +333,22 @@
 
         <div class="demo-result" id="resultArea">
             <div class="result-card">
-                <div style="font-size:11px; font-weight:700; color:var(--text-gray); letter-spacing:0.5px;">PREDICTION</div>
+                <div class="result-title">PREDICTION</div>
                 <div id="statusBadge" class="badge waiting">Waiting for input...</div>
             </div>
             <div class="result-card">
-                <div style="font-size:11px; font-weight:700; color:var(--text-gray); letter-spacing:0.5px;">CONFIDENCE SCORE</div>
-                <div id="confValue" style="font-size:24px; font-weight:800; color:var(--text-dark); margin-top:5px;">-- %</div>
+                <div class="result-title">CONFIDENCE SCORE</div>
+                <div id="confValue" style="font-size:24px; font-weight:800; color:#1f1f1f; margin-top:5px;">-- %</div>
                 <div style="width: 100%; height: 6px; background: #f1f5f9; margin-top: 10px; border-radius:3px; overflow:hidden;">
                     <div id="meterFill" style="width: 0%; height: 100%; background: var(--primary); border-radius: 3px; transition: 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
                 </div>
             </div>
             <div class="result-card">
-                <div style="font-size:11px; font-weight:700; color:var(--text-gray); letter-spacing:0.5px;">AI FORENSICS</div>
-                <div id="insightText" style="font-size:14px; margin-top:8px; color:var(--text-dark); line-height:1.5;">--</div>
+                <div class="result-title">AI FORENSICS</div>
+                <div id="insightText" style="font-size:14px; margin-top:8px; color:#1f1f1f; line-height:1.5;">--</div>
             </div>
             <div class="result-card" id="linkSection" style="display:none;">
-                <div style="font-size:11px; font-weight:700; color:var(--text-gray); letter-spacing:0.5px;">SUSPICIOUS LINKS</div>
+                <div class="result-title">SUSPICIOUS LINKS</div>
                 <div id="linkList" style="margin-top:10px;"></div>
             </div>
         </div>
@@ -396,9 +400,9 @@
 
     <div class="api-section">
         <div style="flex:1;">
-            <h2 style="font-size: 36px; font-weight:800; color:var(--text-dark); margin-bottom:20px;">Built for Developers</h2>
+            <h2 style="font-size: 36px; font-weight:800; color:var(--text-light); margin-bottom:20px;">Built for Developers</h2>
             <p style="color:var(--text-gray); font-size:18px; line-height:1.6; margin-bottom:30px;">Integrate enterprise-grade detection via API.</p>
-            <button class="btn-nav" style="background:var(--text-dark);">Read Documentation</button>
+            <button class="btn-nav" style="background:var(--text-light); color:black;">Read Documentation</button>
         </div>
         <div class="api-code">
             <span class="token">import</span> requests<br><br>
@@ -449,7 +453,7 @@
                 const file = this.files[0];
                 const textarea = document.getElementById('mainTextInput');
                 const fileStatus = document.getElementById('fileStatus');
-                fileStatus.innerText = "📂 Attached: " + file.name;
+                fileStatus.innerText = "📎 Attached: " + file.name;
                 fileStatus.style.display = 'block';
                 textarea.value = "⏳ Scanning image for text...";
                 const formData = new FormData();
@@ -479,18 +483,18 @@
                     badge.innerText = data.result === 'spam' ? "⛔ SPAM DETECTED" : (data.result === 'promo' ? "📢 PROMOTION" : "✅ VERIFIED SAFE");
                     document.getElementById('confValue').innerText = data.confidence + "%";
                     document.getElementById('meterFill').style.width = data.confidence + "%";
-                    document.getElementById('meterFill').style.backgroundColor = data.result === 'spam' ? '#dc2626' : (data.result === 'promo' ? '#4f46e5' : '#16a34a');
+                    document.getElementById('meterFill').style.backgroundColor = data.result === 'spam' ? '#d93025' : (data.result === 'promo' ? '#1a73e8' : '#137333');
                     document.getElementById('insightText').innerText = data.insight;
                     const linkDiv = document.getElementById('linkList'); const linkSection = document.getElementById('linkSection'); linkDiv.innerHTML = "";
                     if(data.links && data.links.length > 0) {
                         linkSection.style.display = 'block';
                         data.links.forEach(l => {
-                            const color = l.risk.includes("High") ? "color:#dc2626; font-weight:bold;" : "color:#16a34a;";
-                            linkDiv.innerHTML += `<div style="font-size:12px; padding:6px 0; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between;"><span>${l.url.substring(0,30)}...</span> <span style="${color}">${l.risk}</span></div>`;
+                            const color = l.risk.includes("High") ? "color:#d93025; font-weight:bold;" : "color:#137333;";
+                            linkDiv.innerHTML += `<div style="font-size:12px; padding:6px 0; border-bottom:1px solid #f2f2f2; display:flex; justify-content:space-between;"><span>${l.url.substring(0,30)}...</span> <span style="${color}">${l.risk}</span></div>`;
                         });
                     } else { linkSection.style.display = 'none'; }
                 } catch(e) { alert("Connection Error"); }
-                btn.innerText = "Run AI Diagnostics"; btn.disabled = false;
+                btn.innerText = "Run Diagnostics"; btn.disabled = false;
             }, 1500);
         }
     </script>
