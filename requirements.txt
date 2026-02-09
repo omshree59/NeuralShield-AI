@@ -1,6 +1,7 @@
 Flask
 flask-sqlalchemy
 flask-login
+werkzeug
 textblob
 Pillow
 pytesseract
