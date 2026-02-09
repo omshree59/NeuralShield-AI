@@ -1,0 +1,9 @@
+Flask
+flask-sqlalchemy
+flask-login
+textblob
+Pillow
+pytesseract
+pandas
+scikit-learn
+gunicorn

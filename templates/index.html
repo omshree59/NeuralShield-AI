@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralShield AI - Enterprise Spam Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- CORE THEME --- */
+        :root {
+            --primary: #6366f1;       /* Indigo */
+            --primary-dark: #4338ca;  /* Deep Indigo */
+            --secondary: #0f172a;     /* Slate 900 */
+            --accent: #818cf8;        /* Light Indigo */
+            --text-dark: #1e293b;
+            --text-gray: #64748b;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; padding: 0; 
+            color: var(--text-dark);
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, transparent 50%);
+            background-image: 
+                radial-gradient(at 40% 20%, hsla(260,100%,92%,1) 0px, transparent 50%),
+                radial-gradient(at 80% 0%, hsla(189,100%,94%,1) 0px, transparent 50%),
+                radial-gradient(at 0% 50%, hsla(341,100%,95%,1) 0px, transparent 50%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        * { box-sizing: border-box; }
+
+        /* --- NAVBAR --- */
+        nav { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 20px 5%; max-width: 1400px; margin: 0 auto; 
+            position: relative; z-index: 10;
+        }
+        .logo-container { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .logo-icon-box {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+        }
+        .logo-text { font-size: 22px; font-weight: 800; color: var(--secondary); letter-spacing: -0.5px; }
+        .nav-right { display: flex; align-items: center; gap: 40px; }
+        .nav-links { display: flex; gap: 30px; font-size: 15px; color: var(--text-dark); font-weight: 600; }
+        .nav-links a:hover { color: var(--primary); }
+        .auth-buttons { display: flex; gap: 15px; }
+        .btn-nav { background: var(--primary); color: white; padding: 10px 24px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3); }
+        .btn-nav:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 6px 12px -1px rgba(99, 102, 241, 0.4); }
+        .btn-outline { background: white; color: var(--text-dark); border: 1px solid #e2e8f0; margin-left: 0; box-shadow: none; }
+        .btn-outline:hover { border-color: var(--text-dark); background: #f8fafc; }
+
+        /* --- HERO --- */
+        .hero { 
+            text-align: center; padding: 100px 20px 60px; max-width: 950px; margin: 0 auto; position: relative; z-index: 5; 
+        }
+        .hero h1 { 
+            font-size: 64px; font-weight: 900; margin-bottom: 24px; line-height: 1.1; letter-spacing: -2px;
+            background: linear-gradient(to right, var(--secondary) 20%, var(--primary) 40%, var(--accent) 60%, var(--secondary) 80%);
+            background-size: 200% auto;
+            color: #000; background-clip: text; text-fill-color: transparent; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shine 4s linear infinite alternate;
+            filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.4));
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+        .hero p { font-size: 20px; color: var(--text-gray); margin-bottom: 50px; line-height: 1.6; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+        /* --- VISUAL SHOWCASE --- */
+        .showcase-container {
+            display: flex; justify-content: center; align-items: center; gap: 40px; 
+            margin-bottom: 100px; padding: 0 20px; position: relative; z-index: 5;
+        }
+        .showcase-img { 
+            width: 380px; border-radius: 16px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 4px solid rgba(255,255,255,0.7);
+            transition: transform 0.3s ease; 
+        }
+        .showcase-img:hover { transform: translateY(-5px) scale(1.02); }
+        .arrow-icon { font-size: 30px; color: var(--primary); opacity: 0.8; }
+
+        /* --- DEMO TOOL --- */
+        .demo-section-title { text-align: center; margin-bottom: 30px; font-size: 28px; font-weight: 700; color: var(--secondary); letter-spacing: -0.5px; }
+        .demo-container { 
+            background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(240,249,255,0.9) 100%);
+            backdrop-filter: blur(20px);
+            max-width: 1000px; margin: 0 auto 100px; border-radius: 24px; 
+            box-shadow: 0 30px 60px -12px rgba(99, 102, 241, 0.15); border: 1px solid rgba(255, 255, 255, 0.8); 
+            overflow: hidden; display: flex; position: relative; z-index: 5;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .demo-container:hover { transform: translateY(-2px); box-shadow: 0 40px 70px -12px rgba(99, 102, 241, 0.2); }
+
+        .demo-input { flex: 1; padding: 50px; border-right: 1px solid rgba(0,0,0,0.05); }
+        .drop-zone { 
+            border: 2px dashed #cbd5e1; border-radius: 16px; padding: 40px; text-align: center; 
+            color: var(--text-gray); cursor: pointer; transition: 0.3s; background: white; position: relative;
+        }
+        .drop-zone:hover { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
+        textarea { 
+            width: 100%; height: 120px; margin-top: 20px; padding: 16px; 
+            border: 1px solid #e2e8f0; border-radius: 12px; font-family: 'Inter', sans-serif; 
+            font-size: 14px; resize: none; outline: none; transition: 0.3s; background: white;
+        }
+        textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        .analyze-btn { 
+            width: 100%; padding: 16px; background: var(--primary); color: white; border: none; 
+            border-radius: 12px; font-size: 16px; font-weight: 700; margin-top: 24px; 
+            cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.25);
+        }
+        .analyze-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .file-status { display: none; margin-top: 15px; padding: 10px 15px; background: #eef2ff; color: var(--primary-dark); border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid #c7d2fe; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .demo-result { flex: 1; padding: 50px; background: rgba(248, 250, 252, 0.6); display: flex; flex-direction: column; justify-content: center; }
+        .result-card { 
+            background: white; padding: 24px; border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; 
+            border: 1px solid rgba(0,0,0,0.04); transition: 0.3s; opacity: 0.5;
+        }
+        .demo-result.active .result-card { opacity: 1; transform: translateX(0); }
+        .badge { display: inline-block; padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 800; margin-top: 5px; letter-spacing: 0.5px; }
+        .badge.safe { background: #dcfce7; color: #166534; } 
+        .badge.spam { background: #fee2e2; color: #991b1b; } 
+        .badge.promo { background: #e0e7ff; color: #3730a3; }
+        .badge.waiting { background: #f1f5f9; color: #64748b; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
+        /* --- NEW: GLOSSY & BOLD FEATURES SECTION --- */
+        .features-section { 
+            background: #0b0f19;
+            position: relative;
+            padding: 120px 20px 180px; 
+            overflow: hidden;
+        }
+
+        .features-bg-glow {
+            position: absolute; width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, rgba(0,0,0,0) 60%);
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 0; animation: pulseGlow 10s infinite alternate;
+        }
+        @keyframes pulseGlow { 0% { opacity: 0.4; scale: 0.8; } 100% { opacity: 0.8; scale: 1.1; } }
+
+        /* THE GLOSSY TEXT EFFECT */
+        .section-title { 
+            position: relative; z-index: 2;
+            text-align: center; 
+            margin-bottom: 90px;
+            font-size: 52px; /* Bigger */
+            font-weight: 900; /* Bolder */
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.1;
+            
+            /* Chrome Gradient */
+            background: linear-gradient(
+                to bottom, 
+                #ffffff 0%, 
+                #eef2ff 45%, 
+                #6366f1 50%, 
+                #4338ca 50%, 
+                #818cf8 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            
+            /* The 3D Shadow Pop */
+            filter: drop-shadow(0 2px 0px rgba(255,255,255,0.2)) 
+                    drop-shadow(0 10px 20px rgba(99, 102, 241, 0.5));
+        }
+        
+        .image-grid { 
+            position: relative; z-index: 2;
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 40px; max-width: 1200px; margin: 0 auto; 
+            align-items: start;
+        }
+        
+        .feature-card {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border-radius: 24px; overflow: hidden; position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 15px 40px -10px rgba(0,0,0,0.6);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            height: 340px; display: flex; flex-direction: column;
+        }
+
+        /* SCATTER PATTERN */
+        @media (min-width: 900px) {
+            .feature-card:nth-child(3n+2) { margin-top: 80px; }
+            .feature-card:nth-child(3n+3) { margin-top: 40px; }
+        }
+        @media (max-width: 900px) {
+            .image-grid { grid-template-columns: 1fr; gap: 30px; }
+            .feature-card { margin-top: 0 !important; }
+        }
+
+        .feature-card:hover { 
+            transform: translateY(-15px) scale(1.02); 
+            box-shadow: 0 30px 60px -10px rgba(99, 102, 241, 0.5); 
+            border-color: rgba(99, 102, 241, 0.8);
+            z-index: 10;
+        }
+
+        .feature-img-container { height: 200px; overflow: hidden; position: relative; }
+        .feature-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease; filter: brightness(0.9); }
+        .feature-card:hover .feature-img { transform: scale(1.2); filter: brightness(1.1); }
+
+        /* GLASS BADGE LABELS */
+        .feature-label-glass {
+            position: absolute; top: 20px; left: 20px; 
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff; font-size: 11px; font-weight: 900; 
+            padding: 8px 16px; border-radius: 8px; 
+            text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .feature-content {
+            padding: 24px; flex: 1; display: flex; flex-direction: column; justify-content: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.3s;
+        }
+        .feature-card:hover .feature-content { background: linear-gradient(to bottom, rgba(99, 102, 241, 0.1), transparent); }
+        .feature-desc { color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0; font-weight: 500; }
+
+        /* --- AUTH MODAL --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
+        .modal-content { background-color: white; margin: 10% auto; padding: 40px; border-radius: 24px; width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: center; position: relative; }
+        .modal input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 12px; outline: none; }
+        .close-btn { position: absolute; right: 24px; top: 24px; cursor: pointer; font-size: 24px; color: #94a3b8; }
+        
+        /* --- API SECTION --- */
+        .api-section { padding: 100px 20px; max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 60px; }
+        .api-code { flex: 1; background: #1e293b; padding: 40px; border-radius: 20px; font-family: 'Courier New', monospace; color: #e2e8f0; font-size: 14px; border: 1px solid rgba(255,255,255,0.05); }
+        .token { color: #38bdf8; } .string { color: #a5b4fc; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            nav { flex-direction: column; gap: 20px; padding: 20px; }
+            .nav-right { flex-direction: column; gap: 20px; width: 100%; }
+            .nav-links { display: none; }
+            .showcase-container { flex-direction: column; }
+            .arrow-icon { transform: rotate(90deg); margin: 10px 0; }
+            .demo-container { flex-direction: column; }
+            .api-section { flex-direction: column; text-align: center; }
+            .hero h1 { font-size: 36px; }
+            .section-title { font-size: 32px; margin-bottom: 50px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="#" class="logo-container">
+            <div class="logo-icon-box"><i class="fa-solid fa-shield-virus"></i></div>
+            <div class="logo-text">NeuralShield</div>
+        </a>
+        <div class="nav-right">
+            <div class="nav-links">
+                <a href="#">Products</a><a href="#">Solutions</a><a href="#">Pricing</a>
+            </div>
+            <div class="auth-buttons">
+                <div id="guest-nav">
+                    <button class="btn-nav btn-outline" onclick="openModal('login')">Log In</button>
+                    <button class="btn-nav" style="margin-left: 10px;" onclick="openModal('signup')">Sign Up</button>
+                </div>
+                <div id="user-menu" style="display:none; align-items:center; gap:15px;">
+                    <span style="font-weight:600; font-size:14px;">Hi, <span id="userNameDisplay">User</span></span>
+                    <a href="/logout" class="btn-nav" style="background:#ef4444; padding: 8px 16px; box-shadow:none;">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('authModal').style.display='none'">&times;</span>
+            <h2 id="modalTitle" style="margin-top:0;">Login</h2>
+            <input type="text" id="nameInput" placeholder="Full Name" style="display:none;">
+            <input type="email" id="emailInput" placeholder="work@email.com">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button class="analyze-btn" onclick="submitAuth()" id="authSubmitBtn">Log In</button>
+            <span style="color:var(--primary); cursor:pointer; font-size:14px; display:block; margin-top:24px; font-weight:600;" onclick="toggleAuthMode()" id="toggleText">Don't have an account? Sign Up</span>
+        </div>
+    </div>
+
+    <div class="hero">
+        <h1>Detect AI Content, Spam & Fraud at Scale</h1>
+        <p>The enterprise standard for detecting AI-generated text, phishing attempts, and manipulated images.</p>
+    </div>
+
+    <div class="showcase-container">
+        <img src="{{ url_for('static', filename='demo_input.png') }}" alt="Input" class="showcase-img">
+        <div class="arrow-icon"><i class="fa-solid fa-arrow-right-long"></i></div>
+        <img src="{{ url_for('static', filename='demo_output.png') }}" alt="Output" class="showcase-img">
+    </div>
+
+    <div class="demo-section-title">Interactive Diagnostic Tool</div>
+
+    <div class="demo-container">
+        <div class="demo-input">
+            <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; margin-bottom:12px; color:var(--primary);"></i><br>
+                <strong>Drag & Drop File</strong><br>
+                <span style="font-size: 13px; color:var(--text-gray);">Supports .txt, .eml, .png, .jpg</span>
+                <input type="file" id="fileInput" hidden accept=".txt,.eml,.png,.jpg">
+            </div>
+            <div id="fileStatus" class="file-status"></div>
+            <textarea id="mainTextInput" placeholder="Paste your text, email content, or upload a file..."></textarea>
+            <button onclick="runDiagnostics()" class="analyze-btn" id="runBtn">Run AI Diagnostics</button>
+        </div>
+
+        <div class="demo-result" id="resultArea">
+            <div class="result-card">
+                <div style="font-size:11px; font-weight:700; color:var(--text-gray); letter-spacing:0.5px;">PREDICTION</div>
+                <div id="statusBadge" class="badge waiting">Waiting for input...</div>
+            </div>
+            <div class="result-card">
+                <div style="font-size:11px; font-weight:700; color:var(--text-gray); letter-spacing:0.5px;">CONFIDENCE SCORE</div>
+                <div id="confValue" style="font-size:24px; font-weight:800; color:var(--text-dark); margin-top:5px;">-- %</div>
+                <div style="width: 100%; height: 6px; background: #f1f5f9; margin-top: 10px; border-radius:3px; overflow:hidden;">
+                    <div id="meterFill" style="width: 0%; height: 100%; background: var(--primary); border-radius: 3px; transition: 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                </div>
+            </div>
+            <div class="result-card">
+                <div style="font-size:11px; font-weight:700; color:var(--text-gray); letter-spacing:0.5px;">AI FORENSICS</div>
+                <div id="insightText" style="font-size:14px; margin-top:8px; color:var(--text-dark); line-height:1.5;">--</div>
+            </div>
+            <div class="result-card" id="linkSection" style="display:none;">
+                <div style="font-size:11px; font-weight:700; color:var(--text-gray); letter-spacing:0.5px;">SUSPICIOUS LINKS</div>
+                <div id="linkList" style="margin-top:10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="features-section">
+        <div class="features-bg-glow"></div>
+        <div class="section-title">Comprehensive Threat Protection</div>
+        <div class="image-grid">
+            
+            <div class="feature-card">
+                <div class="feature-img-container"><img src="{{ url_for('static', filename='f1.jpg') }}" class="feature-img"></div>
+                <div class="feature-label-glass">MISINFORMATION</div>
+                <div class="feature-content"><p class="feature-desc">Identifies AI-generated fake news and deepfakes instantly.</p></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-img-container"><img src="{{ url_for('static', filename='f2.jpg') }}" class="feature-img"></div>
+                <div class="feature-label-glass">INSURANCE FRAUD</div>
+                <div class="feature-content"><p class="feature-desc">Detects manipulated images in property insurance claims.</p></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-img-container"><img src="{{ url_for('static', filename='f3.jpg') }}" class="feature-img"></div>
+                <div class="feature-label-glass">FAKE PROFILES</div>
+                <div class="feature-content"><p class="feature-desc">Flags AI-generated profile pictures used by bots and scammers.</p></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-img-container"><img src="{{ url_for('static', filename='f4.jpg') }}" class="feature-img"></div>
+                <div class="feature-label-glass">ID VERIFICATION</div>
+                <div class="feature-content"><p class="feature-desc">Prevents KYC bypass attempts with fake or spoofed IDs.</p></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-img-container"><img src="{{ url_for('static', filename='f5.jpg') }}" class="feature-img"></div>
+                <div class="feature-label-glass">MARKETPLACE SPAM</div>
+                <div class="feature-content"><p class="feature-desc">Stops mass-uploading of auto-generated product images.</p></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-img-container"><img src="{{ url_for('static', filename='f6.jpg') }}" class="feature-img"></div>
+                <div class="feature-label-glass">FAKE EVIDENCE</div>
+                <div class="feature-content"><p class="feature-desc">Analyzes accident reports for pixel manipulation and edits.</p></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="api-section">
+        <div style="flex:1;">
+            <h2 style="font-size: 36px; font-weight:800; color:var(--text-dark); margin-bottom:20px;">Built for Developers</h2>
+            <p style="color:var(--text-gray); font-size:18px; line-height:1.6; margin-bottom:30px;">Integrate enterprise-grade detection via API.</p>
+            <button class="btn-nav" style="background:var(--text-dark);">Read Documentation</button>
+        </div>
+        <div class="api-code">
+            <span class="token">import</span> requests<br><br>
+            res = requests.post(<span class="string">'https://api.neuralshield.com/check'</span>, json={<span class="string">'text'</span>: <span class="string">'Urgent Verify'</span>})<br>
+            <span class="token">print</span>(res.json())
+        </div>
+    </div>
+
+    <script>
+        let isLoginMode = true;
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/get_user_status');
+                const data = await res.json();
+                if(data.is_logged_in) {
+                    document.getElementById('guest-nav').style.display = 'none';
+                    document.getElementById('user-menu').style.display = 'flex';
+                    document.getElementById('userNameDisplay').innerText = data.name;
+                }
+            } catch(e) {}
+        }
+        checkLoginStatus();
+
+        function openModal(mode) {
+            document.getElementById('authModal').style.display = 'block';
+            isLoginMode = (mode === 'login');
+            updateModalUI();
+        }
+        function toggleAuthMode() { isLoginMode = !isLoginMode; updateModalUI(); }
+        function updateModalUI() {
+            document.getElementById('modalTitle').innerText = isLoginMode ? "Login" : "Create Account";
+            document.getElementById('authSubmitBtn').innerText = isLoginMode ? "Log In" : "Sign Up";
+            document.getElementById('toggleText').innerText = isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Log In";
+            document.getElementById('nameInput').style.display = isLoginMode ? "none" : "block";
+        }
+        async function submitAuth() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const name = document.getElementById('nameInput').value;
+            const endpoint = isLoginMode ? '/login' : '/signup';
+            const res = await fetch(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password, name }) });
+            const data = await res.json();
+            if(res.ok) { alert(data.message); document.getElementById('authModal').style.display = 'none'; checkLoginStatus(); } else { alert(data.error); }
+        }
+
+        document.getElementById('fileInput').addEventListener('change', async function() {
+            if(this.files[0]) {
+                const file = this.files[0];
+                const textarea = document.getElementById('mainTextInput');
+                const fileStatus = document.getElementById('fileStatus');
+                fileStatus.innerText = "📂 Attached: " + file.name;
+                fileStatus.style.display = 'block';
+                textarea.value = "⏳ Scanning image for text...";
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    const res = await fetch('/process_file', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.error) textarea.value = "Error: " + data.error;
+                    else if (!data.email_text || data.email_text.trim() === "") textarea.value = "[OCR Complete] No readable text found.";
+                    else textarea.value = data.email_text;
+                } catch(e) { textarea.value = "Upload failed: " + e; }
+            }
+        });
+
+        async function runDiagnostics() {
+            const text = document.getElementById('mainTextInput').value;
+            const resultArea = document.getElementById('resultArea');
+            const badge = document.getElementById('statusBadge');
+            const btn = document.getElementById('runBtn');
+            if(!text || text.startsWith("⏳")) { alert("Please wait for scan or enter text."); return; }
+            resultArea.classList.add('active'); badge.className = 'badge waiting'; badge.innerText = "Analyzing..."; btn.innerText = "Running Scan..."; btn.disabled = true;
+            setTimeout(async () => {
+                try {
+                    const res = await fetch('/predict', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: text}) });
+                    const data = await res.json();
+                    badge.className = 'badge ' + data.result;
+                    badge.innerText = data.result === 'spam' ? "⛔ SPAM DETECTED" : (data.result === 'promo' ? "📢 PROMOTION" : "✅ VERIFIED SAFE");
+                    document.getElementById('confValue').innerText = data.confidence + "%";
+                    document.getElementById('meterFill').style.width = data.confidence + "%";
+                    document.getElementById('meterFill').style.backgroundColor = data.result === 'spam' ? '#dc2626' : (data.result === 'promo' ? '#4f46e5' : '#16a34a');
+                    document.getElementById('insightText').innerText = data.insight;
+                    const linkDiv = document.getElementById('linkList'); const linkSection = document.getElementById('linkSection'); linkDiv.innerHTML = "";
+                    if(data.links && data.links.length > 0) {
+                        linkSection.style.display = 'block';
+                        data.links.forEach(l => {
+                            const color = l.risk.includes("High") ? "color:#dc2626; font-weight:bold;" : "color:#16a34a;";
+                            linkDiv.innerHTML += `<div style="font-size:12px; padding:6px 0; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between;"><span>${l.url.substring(0,30)}...</span> <span style="${color}">${l.risk}</span></div>`;
+                        });
+                    } else { linkSection.style.display = 'none'; }
+                } catch(e) { alert("Connection Error"); }
+                btn.innerText = "Run AI Diagnostics"; btn.disabled = false;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

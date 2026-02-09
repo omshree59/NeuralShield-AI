@@ -1,0 +1,14 @@
+# Ignore the Virtual Environment (Huge folder)
+venv/
+env/
+__pycache__/
+
+# Ignore Training Data (Huge CSVs)
+emails.csv
+spam.csv
+combined_data.csv
+big_spam.csv
+# Keep the model! We NEED spam_model.pkl
+
+# Ignore System Files
+.DS_Store
