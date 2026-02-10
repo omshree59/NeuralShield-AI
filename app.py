@@ -185,10 +185,15 @@ def predict():
     email_text = data.get('text', '')
     text_lower = email_text.lower()
     
-    # --- 1. EDUCATIONAL INSTITUTIONS (Always Safe) ---
-    # Detects IIT, VIT, .edu emails, or general college terms
+    # 0. FIND TRIGGERS FIRST
+    triggers = [word for word in SPAM_TRIGGERS if word in text_lower]
+    
+    # --- 1. EDUCATIONAL INSTITUTIONS (Smart Check) ---
+    # Only mark safe if there are NO obvious spam triggers
     edu_keywords = ['iit', 'vit', 'university', 'college', 'institute', 'ac.in', '.edu', 'student portal', 'campus']
-    if any(word in text_lower for word in edu_keywords):
+    is_edu = any(word in text_lower for word in edu_keywords)
+    
+    if is_edu and not triggers:
         return jsonify({
             'result': 'safe', 
             'confidence': 99.8, 
@@ -197,15 +202,17 @@ def predict():
             'tone': "Academic", 
             'links': []
         })
+    elif is_edu and triggers:
+        # If it's an institute but has spam words, let the AI decide!
+        pass 
 
     # --- 2. SOCIAL MEDIA & SERVICES (Context Aware) ---
-    # Detects Spotify, Amazon, Google, Instagram, etc.
     service_keywords = ['spotify', 'amazon', 'youtube', 'instagram', 'netflix', 'linkedin', 'google', 'facebook', 'twitter']
-    
     if any(service in text_lower for service in service_keywords):
-        # SUB-RULE A: Security / Account Info -> SAFE
         security_keywords = ['password', 'verify', 'security alert', 'login', 'receipt', 'order confirmed', 'invoice', 'two-factor', 'otp', 'account info']
-        if any(sec in text_lower for sec in security_keywords):
+        
+        # If it's Amazon + "Urgent" -> It might be a scam, so we check triggers
+        if any(sec in text_lower for sec in security_keywords) and not triggers:
              return jsonify({
                 'result': 'safe', 
                 'confidence': 99.5, 
@@ -214,21 +221,10 @@ def predict():
                 'tone': "Transactional", 
                 'links': []
             })
-        
-        # SUB-RULE B: Marketing / Engagement -> PROMO
-        # If it's not security, it's likely "Join Premium", "Check this out", etc.
-        return jsonify({
-            'result': 'promo', 
-            'confidence': 92.0, 
-            'insight': "📢 PROMOTION: Service marketing or engagement email.", 
-            'triggers': [], 
-            'tone': "Marketing", 
-            'links': []
-        })
 
-    # --- 3. SELECTION / JOB OFFERS (Existing Logic) ---
+    # --- 3. SELECTION / JOB OFFERS (Smart Check) ---
     selection_keywords = ['shortlisted', 'selected', 'interview', 'hired', 'offer letter', 'top 5%', 'round 1']
-    if any(word in text_lower for word in selection_keywords):
+    if any(word in text_lower for word in selection_keywords) and not triggers:
         return jsonify({
             'result': 'safe', 
             'confidence': 99.5, 
@@ -245,7 +241,7 @@ def predict():
             'result': 'promo', 
             'confidence': 95.0, 
             'insight': "📢 PROMOTION: Contains marketing language.", 
-            'triggers': [], 
+            'triggers': triggers, 
             'tone': "Marketing", 
             'links': []
         })
@@ -257,7 +253,6 @@ def predict():
     except: 
         confidence = 99.9
 
-    triggers = [word for word in SPAM_TRIGGERS if word in text_lower]
     tone_analysis = get_tone(email_text)
     link_analysis = analyze_links(email_text)
 
