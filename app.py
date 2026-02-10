@@ -8,6 +8,10 @@ import io
 import os
 import sys
 import gc  # <--- NEW: Garbage Collector for memory management
+from flask_cors import CORS  # <--- NEW IMPORT
+
+app = Flask(__name__)
+CORS(app)  # <--- ENABLE CORS FOR ALL ROUTES
 
 # --- AUTH LIBRARIES ---
 from flask_sqlalchemy import SQLAlchemy
