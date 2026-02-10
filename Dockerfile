@@ -11,4 +11,4 @@ COPY . /app
 
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-CMD ["gunicorn", "--workers=1", "--threads=4", "--timeout=120", "--bind", "0.0.0.0:10000", "app:app"]
+CMD ["gunicorn", "--workers=1", "--threads=1", "--timeout=300", "--preload", "--max-requests=50", "--max-requests-jitter=5", "--bind", "0.0.0.0:10000", "app:app"]
