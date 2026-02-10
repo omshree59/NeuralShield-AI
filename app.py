@@ -7,11 +7,8 @@ import pytesseract
 import io
 import os
 import sys
-import gc  # <--- NEW: Garbage Collector for memory management
-from flask_cors import CORS  # <--- NEW IMPORT
-
-app = Flask(__name__)
-CORS(app)  # <--- ENABLE CORS FOR ALL ROUTES
+import gc  # Garbage Collector for memory management
+from flask_cors import CORS # For Chrome Extension
 
 # --- AUTH LIBRARIES ---
 from flask_sqlalchemy import SQLAlchemy
@@ -22,10 +19,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 if os.name == 'nt': # Windows
     # Update this path if needed
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-else: # Linux / Cloud
+else: # Linux / Cloud (Render)
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 app = Flask(__name__)
+CORS(app) # Enable CORS for Chrome Extension
 
 # --- 2. APP CONFIGURATION ---
 app.config['SECRET_KEY'] = 'hackathon-secret-key-123' 
@@ -155,7 +153,6 @@ def process_file():
             image = image.convert('L') 
             
             # 3. OPTIMIZATION: Resize if too huge (Max 1000px width/height)
-            # This prevents 4K screenshots from crashing the server
             image.thumbnail((1000, 1000)) 
             
             # 4. Extract Text
@@ -186,25 +183,81 @@ def predict():
         
     data = request.get_json()
     email_text = data.get('text', '')
+    text_lower = email_text.lower()
     
-    vip_words = ['unstop', 'internship', 'stipend', 'college', 'university']
-    if any(word in email_text.lower() for word in vip_words):
+    # --- 1. EDUCATIONAL INSTITUTIONS (Always Safe) ---
+    # Detects IIT, VIT, .edu emails, or general college terms
+    edu_keywords = ['iit', 'vit', 'university', 'college', 'institute', 'ac.in', '.edu', 'student portal', 'campus']
+    if any(word in text_lower for word in edu_keywords):
+        return jsonify({
+            'result': 'safe', 
+            'confidence': 99.8, 
+            'insight': "✅ INSTITUTION: Official communication from an educational body.", 
+            'triggers': [], 
+            'tone': "Academic", 
+            'links': []
+        })
+
+    # --- 2. SOCIAL MEDIA & SERVICES (Context Aware) ---
+    # Detects Spotify, Amazon, Google, Instagram, etc.
+    service_keywords = ['spotify', 'amazon', 'youtube', 'instagram', 'netflix', 'linkedin', 'google', 'facebook', 'twitter']
+    
+    if any(service in text_lower for service in service_keywords):
+        # SUB-RULE A: Security / Account Info -> SAFE
+        security_keywords = ['password', 'verify', 'security alert', 'login', 'receipt', 'order confirmed', 'invoice', 'two-factor', 'otp', 'account info']
+        if any(sec in text_lower for sec in security_keywords):
+             return jsonify({
+                'result': 'safe', 
+                'confidence': 99.5, 
+                'insight': "✅ SECURITY: Official account update or security alert.", 
+                'triggers': [], 
+                'tone': "Transactional", 
+                'links': []
+            })
+        
+        # SUB-RULE B: Marketing / Engagement -> PROMO
+        # If it's not security, it's likely "Join Premium", "Check this out", etc.
         return jsonify({
             'result': 'promo', 
-            'confidence': 98.5, 
-            'insight': "📢 PROMOTION: Verified Opportunity.", 
+            'confidence': 92.0, 
+            'insight': "📢 PROMOTION: Service marketing or engagement email.", 
+            'triggers': [], 
+            'tone': "Marketing", 
+            'links': []
+        })
+
+    # --- 3. SELECTION / JOB OFFERS (Existing Logic) ---
+    selection_keywords = ['shortlisted', 'selected', 'interview', 'hired', 'offer letter', 'top 5%', 'round 1']
+    if any(word in text_lower for word in selection_keywords):
+        return jsonify({
+            'result': 'safe', 
+            'confidence': 99.5, 
+            'insight': "✅ OFFICIAL: Valid selection or interview update.", 
             'triggers': [], 
             'tone': "Professional", 
             'links': []
         })
 
+    # --- 4. GENERAL PROMO KEYWORDS ---
+    promo_keywords = ['apply now', 'early bird', 'discount', 'stipend', 'bootcamp', 'webinar', 'limited time']
+    if any(word in text_lower for word in promo_keywords):
+        return jsonify({
+            'result': 'promo', 
+            'confidence': 95.0, 
+            'insight': "📢 PROMOTION: Contains marketing language.", 
+            'triggers': [], 
+            'tone': "Marketing", 
+            'links': []
+        })
+
+    # --- 5. GENERAL AI MODEL FALLBACK ---
     prediction = model.predict([email_text])[0]
     try: 
         confidence = round(max(model.predict_proba([email_text])[0]) * 100, 1)
     except: 
         confidence = 99.9
 
-    triggers = [word for word in SPAM_TRIGGERS if word in email_text.lower()]
+    triggers = [word for word in SPAM_TRIGGERS if word in text_lower]
     tone_analysis = get_tone(email_text)
     link_analysis = analyze_links(email_text)
 
