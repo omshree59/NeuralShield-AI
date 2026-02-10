@@ -411,7 +411,7 @@
         </div>
     </div>
 
-    <script>
+   <script>
         let isLoginMode = true;
         async function checkLoginStatus() {
             try {
@@ -448,6 +448,7 @@
             if(res.ok) { alert(data.message); document.getElementById('authModal').style.display = 'none'; checkLoginStatus(); } else { alert(data.error); }
         }
 
+        // --- FIXED FILE UPLOAD SECTION ---
         document.getElementById('fileInput').addEventListener('change', async function() {
             if(this.files[0]) {
                 const file = this.files[0];
@@ -456,35 +457,61 @@
                 fileStatus.innerText = "📎 Attached: " + file.name;
                 fileStatus.style.display = 'block';
                 textarea.value = "⏳ Scanning image for text...";
+                
                 const formData = new FormData();
                 formData.append('file', file);
+                
                 try {
                     const res = await fetch('/process_file', { method: 'POST', body: formData });
+                    
+                    // CHECK FOR HTML ERROR (The "Unexpected token <" fix)
+                    const contentType = res.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) {
+                        const errorText = await res.text();
+                        console.error("Server Error HTML:", errorText);
+                        textarea.value = "❌ SERVER ERROR: The server crashed (Memory Limit).\n\n" + 
+                                         "This usually happens on the Free Tier with large images.\n" +
+                                         "Please try a smaller image.";
+                        return;
+                    }
+
                     const data = await res.json();
+                    
                     if (data.error) textarea.value = "Error: " + data.error;
                     else if (!data.email_text || data.email_text.trim() === "") textarea.value = "[OCR Complete] No readable text found.";
                     else textarea.value = data.email_text;
-                } catch(e) { textarea.value = "Upload failed: " + e; }
+
+                } catch(e) { 
+                    console.error(e);
+                    textarea.value = "⚠️ NETWORK ERROR: " + e.message; 
+                }
             }
-        });
+        }); // <--- THIS WAS MISSING IN YOUR CODE
 
         async function runDiagnostics() {
             const text = document.getElementById('mainTextInput').value;
             const resultArea = document.getElementById('resultArea');
             const badge = document.getElementById('statusBadge');
             const btn = document.getElementById('runBtn');
+            
             if(!text || text.startsWith("⏳")) { alert("Please wait for scan or enter text."); return; }
+            
             resultArea.classList.add('active'); badge.className = 'badge waiting'; badge.innerText = "Analyzing..."; btn.innerText = "Running Scan..."; btn.disabled = true;
+            
             setTimeout(async () => {
                 try {
                     const res = await fetch('/predict', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: text}) });
                     const data = await res.json();
+                    
                     badge.className = 'badge ' + data.result;
                     badge.innerText = data.result === 'spam' ? "⛔ SPAM DETECTED" : (data.result === 'promo' ? "📢 PROMOTION" : "✅ VERIFIED SAFE");
+                    
                     document.getElementById('confValue').innerText = data.confidence + "%";
                     document.getElementById('meterFill').style.width = data.confidence + "%";
                     document.getElementById('meterFill').style.backgroundColor = data.result === 'spam' ? '#d93025' : (data.result === 'promo' ? '#1a73e8' : '#137333');
+                    
                     document.getElementById('insightText').innerText = data.insight;
+                    
                     const linkDiv = document.getElementById('linkList'); const linkSection = document.getElementById('linkSection'); linkDiv.innerHTML = "";
                     if(data.links && data.links.length > 0) {
                         linkSection.style.display = 'block';
@@ -498,5 +525,3 @@
             }, 1500);
         }
     </script>
-</body>
-</html>
