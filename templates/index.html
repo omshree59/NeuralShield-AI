@@ -197,14 +197,29 @@
         @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
         /* SUMMARY TEXT BOX */
+/* --- IMPROVED SUMMARY BOX --- */
         .summary-box {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #334155;
-            white-space: pre-wrap;
-            max-height: 250px;
-            overflow-y: auto;
+            font-size: 15px;           /* Slightly larger text for readability */
+            line-height: 1.8;          /* More space between lines */
+            color: #334155;            /* Dark Slate for contrast */
+            white-space: pre-wrap;     /* Respects the new lines/bullets from Python */
+            max-height: 400px;         /* Taller box */
+            overflow-y: auto;          /* Scrollable */
+            
+            /* Visual Styling */
+            background: #f8fafc;       /* Very light slate background */
+            border: 1px solid #cbd5e1; /* Subtle border */
+            border-radius: 12px;       /* Smooth corners */
+            padding: 25px;             /* Lots of internal breathing room */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); /* Inner shadow for depth */
+            font-family: 'Roboto', sans-serif; /* Clean reading font */
         }
+
+        /* Pretty Scrollbar for the Summary Box */
+        .summary-box::-webkit-scrollbar { width: 8px; }
+        .summary-box::-webkit-scrollbar-track { background: transparent; }
+        .summary-box::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; border: 3px solid transparent; background-clip: content-box; }
+        .summary-box::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
 
         /* --- FEATURES SECTION --- */
         .features-section { 
@@ -551,11 +566,13 @@
         }
 
         // --- FIXED FILE UPLOAD SECTION ---
+// 1. File Upload Listener (ONLY GETS TEXT)
         document.getElementById('fileInput').addEventListener('change', async function() {
             if(this.files[0]) {
                 const file = this.files[0];
                 const textarea = document.getElementById('mainTextInput');
                 const fileStatus = document.getElementById('fileStatus');
+                
                 fileStatus.innerText = "📎 Attached: " + file.name;
                 fileStatus.style.display = 'block';
                 textarea.value = "⏳ Scanning document...";
@@ -564,41 +581,23 @@
                 formData.append('file', file);
                 
                 try {
+                    // Call Step 1: Process File
                     const res = await fetch('/process_file', { method: 'POST', body: formData });
-                    
-                    // CHECK FOR HTML ERROR
-                    const contentType = res.headers.get("content-type");
-                    if (!contentType || !contentType.includes("application/json")) {
-                        textarea.value = "❌ SERVER ERROR: The server crashed (Memory Limit). Try a smaller file.";
-                        return;
-                    }
-
                     const data = await res.json();
                     
-                    if (data.error) {
+                    if(data.error) {
                         textarea.value = "Error: " + data.error;
                     } else {
-                        // 1. Show Extracted Text
-                        textarea.value = data.email_text || "[OCR Complete] No readable text found.";
-                        
-                        // 2. Store Summary for later
-                        storedSummary = data.summary || "No summary available for this document.";
-
-                        // 3. If we are already in Summary Mode, show it now
-                        if (currentMode === 'summary') {
-                            document.getElementById('summaryText').innerText = storedSummary;
-                        }
+                        // Show text, but DO NOT summarize yet
+                        textarea.value = data.email_text || "No readable text found.";
                     }
-
-                } catch(e) { 
-                    console.error(e);
-                    // CHECK FOR OFFLINE
-                    if(!navigator.onLine) document.getElementById('offline-overlay').style.display = 'flex';
-                    textarea.value = "⚠️ NETWORK ERROR: " + e.message; 
+                } catch(e) {
+                    textarea.value = "⚠️ Error: " + e.message;
                 }
             }
         });
 
+        // 2. Main Button Logic (HANDLES BOTH MODES)
         async function runDiagnostics() {
             const text = document.getElementById('mainTextInput').value;
             const resultArea = document.getElementById('resultArea');
@@ -609,52 +608,53 @@
             resultArea.classList.add('active');
             btn.disabled = true;
 
-            // --- MODE A: SUMMARY ---
+            // --- MODE A: SUMMARIZE (Now Smarter & On-Click) ---
             if (currentMode === 'summary') {
-                btn.innerText = "Generating...";
-                setTimeout(() => {
-                    // Show the summary we stored during upload, or a placeholder
-                    document.getElementById('summaryText').innerText = storedSummary || "Summary generated from uploaded PDF will appear here.";
-                    btn.innerText = "Generate Summary";
-                    btn.disabled = false;
-                }, 800);
-            }
-            // --- MODE B: SPAM CHECK ---
+                btn.innerText = "Generating Smart Summary...";
+                
+                try {
+                    // Call Step 2: Generate Summary
+                    const res = await fetch('/generate_summary', { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify({text: text}) 
+                    });
+                    const data = await res.json();
+                    
+                    // Display the Smart Summary
+                    document.getElementById('summaryText').innerText = data.summary;
+                    
+                } catch(e) {
+                    document.getElementById('summaryText').innerText = "Error generating summary.";
+                }
+                
+                btn.innerText = "Generate Summary";
+                btn.disabled = false;
+            } 
+            
+            // --- MODE B: SPAM CHECK (Your existing logic) ---
             else {
+                // ... (Keep your existing Spam Check logic here) ...
                 const badge = document.getElementById('statusBadge');
                 badge.className = 'badge waiting'; 
                 badge.innerText = "Analyzing...";
-                btn.innerText = "Running Scan...";
                 
-                setTimeout(async () => {
-                    try {
-                        const res = await fetch('/predict', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: text}) });
-                        const data = await res.json();
-                        
-                        badge.className = 'badge ' + data.result;
-                        badge.innerText = data.result === 'spam' ? "⛔ SPAM DETECTED" : (data.result === 'promo' ? "📢 PROMOTION" : "✅ VERIFIED SAFE");
-                        
-                        document.getElementById('confValue').innerText = data.confidence + "%";
-                        document.getElementById('meterFill').style.width = data.confidence + "%";
-                        document.getElementById('meterFill').style.backgroundColor = data.result === 'spam' ? '#d93025' : (data.result === 'promo' ? '#1a73e8' : '#137333');
-                        
-                        document.getElementById('insightText').innerText = data.insight;
-                        
-                        const linkDiv = document.getElementById('linkList'); const linkSection = document.getElementById('linkSection'); linkDiv.innerHTML = "";
-                        if(data.links && data.links.length > 0) {
-                            linkSection.style.display = 'block';
-                            data.links.forEach(l => {
-                                const color = l.risk.includes("High") ? "color:#d93025; font-weight:bold;" : "color:#137333;";
-                                linkDiv.innerHTML += `<div style="font-size:12px; padding:6px 0; border-bottom:1px solid #f2f2f2; display:flex; justify-content:space-between;"><span>${l.url.substring(0,30)}...</span> <span style="${color}">${l.risk}</span></div>`;
-                            });
-                        } else { linkSection.style.display = 'none'; }
-                    } catch(e) { 
-                        // CHECK FOR OFFLINE
-                        if(!navigator.onLine) document.getElementById('offline-overlay').style.display = 'flex';
-                        else alert("Connection Error"); 
-                    }
-                    btn.innerText = "Run AI Diagnostics"; btn.disabled = false;
-                }, 1500);
+                try {
+                    const res = await fetch('/predict', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: text}) });
+                    const data = await res.json();
+                    
+                    badge.className = 'badge ' + data.result;
+                    badge.innerText = data.result === 'spam' ? "⛔ SPAM DETECTED" : (data.result === 'promo' ? "📢 PROMOTION" : "✅ VERIFIED SAFE");
+                    
+                    document.getElementById('confValue').innerText = data.confidence + "%";
+                    document.getElementById('meterFill').style.width = data.confidence + "%";
+                    document.getElementById('meterFill').style.backgroundColor = data.result === 'spam' ? '#d93025' : (data.result === 'promo' ? '#1a73e8' : '#137333');
+                    document.getElementById('insightText').innerText = data.insight;
+
+                } catch(e) { alert("Connection Error"); }
+                
+                btn.innerText = "Run AI Diagnostics"; 
+                btn.disabled = false;
             }
         }
     </script>
