@@ -24,7 +24,7 @@ print("--- 📚 IMPORTING LIBRARIES COMPLETE ---")
 import nltk
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lex_rank import LexRankSummarizer
+from sumy.summarizers.text_rank import TextRankSummarizer
 
 print("--- 🧠 CHECKING NLTK DATA (This might take a moment...) ---")
 try:
@@ -131,29 +131,16 @@ def get_tone(text):
 
 # --- SMART SUMMARIZER (TextRank) ---
 def smart_summary(text, sentences_count=3):
-    if not text or len(text) < 100: 
-        return "Document too short to summarize."
-    
+    if not text: return "No text provided."
     try:
-        # Clean text: Remove extra whitespace and empty lines
-        clean_text = ' '.join(text.split())
-        
-        parser = PlaintextParser.from_string(clean_text, Tokenizer("english"))
-        
-        # LexRank is smarter than LSA but uses less RAM than TextRank
-        summarizer = LexRankSummarizer()
-        
+        parser = PlaintextParser.from_string(text, Tokenizer("english"))
+        summarizer = TextRankSummarizer()
         summary = summarizer(parser.document, sentences_count)
-        
-        if not summary:
-            return "Could not identify key sentences. Try a longer document."
-
+        # Format as bullet points
         return "• " + "\n\n• ".join([str(sentence) for sentence in summary])
-        
     except Exception as e:
         print(f"Summarizer Error: {e}")
-        # Return a slightly better fallback than just the first 500 chars
-        return "⚠️ Summary generation failed due to server memory limits."
+        return text[:500] + "..." # Fallback
 
 # --- ROUTES ---
 
