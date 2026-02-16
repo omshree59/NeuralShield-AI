@@ -7,30 +7,30 @@ import pytesseract
 import io
 import os
 import sys
-import gc  # Garbage Collector for memory management
-from flask_cors import CORS # For Chrome Extension
+import gc  # Garbage Collector
+import PyPDF2  # <--- NEW: For Reading PDFs
+from collections import Counter # <--- NEW: For Summarizing
+from flask_cors import CORS 
 
 # --- AUTH LIBRARIES ---
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# --- 1. SMART TESSERACT CONFIGURATION ---
+# --- 1. TESSERACT CONFIG ---
 if os.name == 'nt': # Windows
-    # Update this path if needed
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-else: # Linux / Cloud (Render)
+else: # Linux / Render
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 app = Flask(__name__)
-CORS(app) # Enable CORS for Chrome Extension
+CORS(app) 
 
-# --- 2. APP CONFIGURATION ---
+# --- 2. DATABASE CONFIG ---
 app.config['SECRET_KEY'] = 'hackathon-secret-key-123' 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- 3. DATABASE & LOGIN SETUP ---
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -43,7 +43,6 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200)) 
     name = db.Column(db.String(100))
 
-# Create Tables
 with app.app_context():
     db.create_all()
 
@@ -51,34 +50,23 @@ with app.app_context():
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- 4. AUTH ROUTES ---
+# --- 3. AUTH ROUTES ---
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    name = data.get('name')
-
-    if User.query.filter_by(email=email).first():
+    if User.query.filter_by(email=data.get('email')).first():
         return jsonify({'error': 'Email already exists.'}), 400
-
-    new_user = User(email=email, name=name, password=generate_password_hash(password, method='pbkdf2:sha256'))
+    new_user = User(email=data.get('email'), name=data.get('name'), password=generate_password_hash(data.get('password'), method='pbkdf2:sha256'))
     db.session.add(new_user)
     db.session.commit()
-
     return jsonify({'message': 'Account created! Please log in.'})
 
 @app.route('/login', methods=['POST'])
 def login_post():
     data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-
-    user = User.query.filter_by(email=email).first()
-
-    if not user or not check_password_hash(user.password, password):
+    user = User.query.filter_by(email=data.get('email')).first()
+    if not user or not check_password_hash(user.password, data.get('password')):
         return jsonify({'error': 'Invalid credentials.'}), 400
-
     login_user(user)
     return jsonify({'message': 'Logged in successfully!', 'name': user.name})
 
@@ -94,7 +82,7 @@ def get_user_status():
         return jsonify({'is_logged_in': True, 'name': current_user.name})
     return jsonify({'is_logged_in': False})
 
-# --- 5. AI MODEL LOADING ---
+# --- 4. AI MODEL & HELPERS ---
 try:
     with open('spam_model.pkl', 'rb') as f:
         model = pickle.load(f)
@@ -117,160 +105,120 @@ def analyze_links(text):
 
 def get_tone(text):
     blob = TextBlob(text)
-    polarity = blob.sentiment.polarity
-    if polarity < -0.3: return "Aggressive / Negative"
-    if polarity > 0.5: return "Friendly / Positive"
+    if blob.sentiment.polarity < -0.3: return "Aggressive / Negative"
+    if blob.sentiment.polarity > 0.5: return "Friendly / Positive"
     return "Neutral"
 
-# --- 6. MAIN ROUTES ---
+# --- 5. PDF SUMMARIZER (The "Highlighter" Logic) ---
+def extract_summary(text, num_sentences=3):
+    if not text: return "No text to summarize."
+    
+    # Clean text
+    sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', text)
+    if len(sentences) <= num_sentences: return text 
+        
+    # Frequency Analysis
+    stopwords = {'the', 'is', 'at', 'which', 'on', 'and', 'a', 'an', 'in', 'to', 'of', 'for', 'it', 'that', 'this', 'with', 'as', 'by', 'from', 'or', 'are', 'was', 'be'}
+    words = re.findall(r'\w+', text.lower())
+    word_freq = Counter([w for w in words if w not in stopwords])
+    max_freq = max(word_freq.values()) if word_freq else 1
+    
+    # Scoring
+    sent_scores = {}
+    for sent in sentences:
+        for word in re.findall(r'\w+', sent.lower()):
+            if word in word_freq:
+                if sent not in sent_scores: sent_scores[sent] = 0
+                sent_scores[sent] += word_freq[word] / max_freq
+
+    # Select Top Sentences
+    import heapq
+    summary_sentences = heapq.nlargest(num_sentences, sent_scores, key=sent_scores.get)
+    return ' '.join(summary_sentences)
+
+# --- 6. ROUTES ---
 @app.route('/')
 def home():
     return render_template('index.html')
 
 @app.route('/process_file', methods=['POST'])
 def process_file():
-    """
-    Optimized for Render Free Tier (Low RAM)
-    """
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
+    if 'file' not in request.files: return jsonify({'error': 'No file uploaded'}), 400
     file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
+    if file.filename == '': return jsonify({'error': 'No file selected'}), 400
 
     filename = file.filename.lower()
     content = ""
 
     try:
-        # Check if it is an image
-        if filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
-            
-            # 1. Open image directly from memory
-            image = Image.open(file.stream)
-            
-            # 2. OPTIMIZATION: Convert to Grayscale (Reduces RAM by 66%)
-            image = image.convert('L') 
-            
-            # 3. OPTIMIZATION: Resize if too huge (Max 1000px width/height)
+        # A. HANDLE PDF
+        if filename.endswith('.pdf'):
+            pdf_reader = PyPDF2.PdfReader(file)
+            for page in pdf_reader.pages:
+                text = page.extract_text()
+                if text: content += text + "\n"
+
+        # B. HANDLE IMAGE
+        elif filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+            image = Image.open(file.stream).convert('L') 
             image.thumbnail((1000, 1000)) 
-            
-            # 4. Extract Text
             content = pytesseract.image_to_string(image)
-            
-            # 5. CLEANUP: Force delete image from memory immediately
             del image
             gc.collect()
 
-        # Check if it is a text/email file
+        # C. HANDLE TEXT
         else:
             content = file.read().decode('utf-8', errors='ignore')
 
         if not content.strip():
-            return jsonify({'email_text': "", 'note': "OCR finished but no text found."})
+            return jsonify({'email_text': "", 'note': "No text found."})
 
-        return jsonify({'email_text': content})
+        # Generate Summary
+        summary = extract_summary(content)
+
+        return jsonify({'email_text': content, 'summary': summary})
 
     except Exception as e:
-        print(f"Error processing file: {e}")
-        # Return a clean error message to the user
-        return jsonify({'error': "Memory Limit Exceeded. Try a smaller image."}), 500
+        print(f"Error: {e}")
+        return jsonify({'error': "File processing failed."}), 500
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if not model:
-        return jsonify({'error': 'Model is not loaded.'}), 500
-        
+    if not model: return jsonify({'error': 'Model not loaded.'}), 500
     data = request.get_json()
-    email_text = data.get('text', '')
-    text_lower = email_text.lower()
+    text = data.get('text', '')
+    text_lower = text.lower()
     
-    # 0. FIND TRIGGERS FIRST
-    triggers = [word for word in SPAM_TRIGGERS if word in text_lower]
+    triggers = [w for w in SPAM_TRIGGERS if w in text_lower]
     
-    # --- 1. EDUCATIONAL INSTITUTIONS (Smart Check) ---
-    # Only mark safe if there are NO obvious spam triggers
-    edu_keywords = ['iit', 'vit', 'university', 'college', 'institute', 'ac.in', '.edu', 'student portal', 'campus']
-    is_edu = any(word in text_lower for word in edu_keywords)
+    # SMART CHECKS (IIT, Amazon, etc.)
+    edu_kw = ['iit', 'vit', 'university', 'college', 'institute', 'ac.in', '.edu']
+    if any(k in text_lower for k in edu_kw) and not triggers:
+        return jsonify({'result': 'safe', 'confidence': 99.8, 'insight': "✅ INSTITUTION: Official.", 'triggers': [], 'tone': "Academic", 'links': []})
+
+    serv_kw = ['amazon', 'google', 'netflix', 'spotify', 'linkedin']
+    if any(s in text_lower for s in serv_kw):
+        sec_kw = ['password', 'verify', 'login', 'order', 'receipt']
+        if any(k in text_lower for k in sec_kw) and not triggers:
+             return jsonify({'result': 'safe', 'confidence': 99.5, 'insight': "✅ SECURITY: Official.", 'triggers': [], 'tone': "Transactional", 'links': []})
+
+    job_kw = ['shortlisted', 'selected', 'interview', 'offer', 'hired']
+    if any(j in text_lower for j in job_kw) and not triggers:
+        return jsonify({'result': 'safe', 'confidence': 99.5, 'insight': "✅ OFFICIAL: Job/Selection.", 'triggers': [], 'tone': "Professional", 'links': []})
+
+    promo_kw = ['apply now', 'discount', 'limited time', 'offer', 'sale']
+    if any(p in text_lower for p in promo_kw):
+        return jsonify({'result': 'promo', 'confidence': 95.0, 'insight': "📢 PROMOTION.", 'triggers': triggers, 'tone': "Marketing", 'links': []})
+
+    # AI FALLBACK
+    pred = model.predict([text])[0]
+    conf = 99.9
+    tone = get_tone(text)
+    links = analyze_links(text)
     
-    if is_edu and not triggers:
-        return jsonify({
-            'result': 'safe', 
-            'confidence': 99.8, 
-            'insight': "✅ INSTITUTION: Official communication from an educational body.", 
-            'triggers': [], 
-            'tone': "Academic", 
-            'links': []
-        })
-    elif is_edu and triggers:
-        # If it's an institute but has spam words, let the AI decide!
-        pass 
+    insight = f"⛔ SPAM: {tone} tone." if pred == 'spam' else ("📢 PROMOTION." if pred == 'promo' else "✅ SAFE.")
 
-    # --- 2. SOCIAL MEDIA & SERVICES (Context Aware) ---
-    service_keywords = ['spotify', 'amazon', 'youtube', 'instagram', 'netflix', 'linkedin', 'google', 'facebook', 'twitter']
-    if any(service in text_lower for service in service_keywords):
-        security_keywords = ['password', 'verify', 'security alert', 'login', 'receipt', 'order confirmed', 'invoice', 'two-factor', 'otp', 'account info']
-        
-        # If it's Amazon + "Urgent" -> It might be a scam, so we check triggers
-        if any(sec in text_lower for sec in security_keywords) and not triggers:
-             return jsonify({
-                'result': 'safe', 
-                'confidence': 99.5, 
-                'insight': "✅ SECURITY: Official account update or security alert.", 
-                'triggers': [], 
-                'tone': "Transactional", 
-                'links': []
-            })
-
-    # --- 3. SELECTION / JOB OFFERS (Smart Check) ---
-    selection_keywords = ['shortlisted', 'selected', 'interview', 'hired', 'offer letter', 'top 5%', 'round 1']
-    if any(word in text_lower for word in selection_keywords) and not triggers:
-        return jsonify({
-            'result': 'safe', 
-            'confidence': 99.5, 
-            'insight': "✅ OFFICIAL: Valid selection or interview update.", 
-            'triggers': [], 
-            'tone': "Professional", 
-            'links': []
-        })
-
-    # --- 4. GENERAL PROMO KEYWORDS ---
-    promo_keywords = ['apply now', 'early bird', 'discount', 'stipend', 'bootcamp', 'webinar', 'limited time']
-    if any(word in text_lower for word in promo_keywords):
-        return jsonify({
-            'result': 'promo', 
-            'confidence': 95.0, 
-            'insight': "📢 PROMOTION: Contains marketing language.", 
-            'triggers': triggers, 
-            'tone': "Marketing", 
-            'links': []
-        })
-
-    # --- 5. GENERAL AI MODEL FALLBACK ---
-    prediction = model.predict([email_text])[0]
-    try: 
-        confidence = round(max(model.predict_proba([email_text])[0]) * 100, 1)
-    except: 
-        confidence = 99.9
-
-    tone_analysis = get_tone(email_text)
-    link_analysis = analyze_links(email_text)
-
-    if prediction == 'spam': 
-        insight = f"⛔ SPAM: {tone_analysis} tone detected."
-    elif prediction == 'promo': 
-        insight = "📢 PROMOTION: Marketing language detected."
-    else: 
-        insight = "✅ SAFE: Natural communication."
-
-    return jsonify({
-        'result': prediction, 
-        'confidence': confidence, 
-        'insight': insight, 
-        'triggers': triggers, 
-        'tone': tone_analysis, 
-        'links': link_analysis
-    })
+    return jsonify({'result': pred, 'confidence': conf, 'insight': insight, 'triggers': triggers, 'tone': tone, 'links': links})
 
 if __name__ == '__main__':
     app.run(debug=True)

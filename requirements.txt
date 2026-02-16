@@ -9,3 +9,4 @@ pandas
 scikit-learn==1.6.1
 gunicorn
 flask-cors
+PyPDF2
